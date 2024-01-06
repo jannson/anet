@@ -148,9 +148,9 @@ func linkFlags(rawFlags uint32) net.Flags {
 	if rawFlags&syscall.IFF_UP != 0 {
 		f |= net.FlagUp
 	}
-	if rawFlags&syscall.IFF_RUNNING != 0 {
+	/* if rawFlags&syscall.IFF_RUNNING != 0 {
 		f |= net.FlagRunning
-	}
+	} */
 	if rawFlags&syscall.IFF_BROADCAST != 0 {
 		f |= net.FlagBroadcast
 	}
