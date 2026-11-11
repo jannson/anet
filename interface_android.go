@@ -2,9 +2,9 @@ package anet
 
 import (
 	"bytes"
-	"errors"
 	"net"
 	"os"
+	"sync/atomic"
 	"syscall"
 	"unsafe"
 )
@@ -14,16 +14,14 @@ const (
 )
 
 var (
-	androidVersion      uint
-	errNoSuchInterface  = errors.New("no such network interface")
-	errInvalidInterface = errors.New("invalid network interface")
+	androidVersion atomic.Uint32
 )
 
 type ifReq [40]byte
 
 // Interfaces returns a list of the system's network interfaces.
-func Interfaces() ([]net.Interface, error) {
-	if androidVersion > android11 {
+func systemInterfaces() ([]net.Interface, error) {
+	if !useAndroidInterfaceWorkaround() {
 		return net.Interfaces()
 	}
 
@@ -40,8 +38,8 @@ func Interfaces() ([]net.Interface, error) {
 //
 // The returned list does not identify the associated interface; use
 // Interfaces and Interface.Addrs for more detail.
-func InterfaceAddrs() ([]net.Addr, error) {
-	if androidVersion > android11 {
+func systemInterfaceAddrs() ([]net.Addr, error) {
+	if !useAndroidInterfaceWorkaround() {
 		return net.InterfaceAddrs()
 	}
 
@@ -54,12 +52,12 @@ func InterfaceAddrs() ([]net.Addr, error) {
 
 // InterfaceAddrsByInterface returns a list of the system's unicast
 // interface addresses by specific interface.
-func InterfaceAddrsByInterface(ifi *net.Interface) ([]net.Addr, error) {
+func systemInterfaceAddrsByInterface(ifi *net.Interface) ([]net.Addr, error) {
 	if ifi == nil {
 		return nil, &net.OpError{Op: "route", Net: "ip+net", Source: nil, Addr: nil, Err: errInvalidInterface}
 	}
 
-	if androidVersion > android11 {
+	if !useAndroidInterfaceWorkaround() {
 		return ifi.Addrs()
 	}
 
@@ -74,7 +72,17 @@ func InterfaceAddrsByInterface(ifi *net.Interface) ([]net.Addr, error) {
 // The Android system version number can be obtained through
 // `android.os.Build.VERSION.RELEASE` of the Android framework.
 func SetAndroidVersion(version uint) {
-	androidVersion = version
+	androidVersion.Store(uint32(version))
+}
+
+// Android API detection follows upstream 4173812; an unknown level keeps
+// the Android workaround instead of using the restricted Go Netlink path.
+func useAndroidInterfaceWorkaround() bool {
+	if version := androidVersion.Load(); version != 0 {
+		return version >= android11
+	}
+	level := androidDeviceApiLevel()
+	return level < 0 || level >= 30
 }
 
 // If the ifindex is zero, interfaceTable returns mappings of all
@@ -203,7 +211,7 @@ loop:
 			break loop
 		case syscall.RTM_NEWADDR:
 			ifam := (*syscall.IfAddrmsg)(unsafe.Pointer(&m.Data[0]))
-			if len(ift) != 0 || ifi.Index == int(ifam.Index) {
+			if ifi == nil || ifi.Index == int(ifam.Index) {
 				attrs, err := syscall.ParseNetlinkRouteAttr(&m)
 				if err != nil {
 					return nil, os.NewSyscallError("parsenetlinkrouteattr", err)

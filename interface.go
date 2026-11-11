@@ -8,7 +8,7 @@ import (
 )
 
 // Interfaces returns a list of the system's network interfaces.
-func Interfaces() ([]net.Interface, error) {
+func systemInterfaces() ([]net.Interface, error) {
 	return net.Interfaces()
 }
 
@@ -17,13 +17,13 @@ func Interfaces() ([]net.Interface, error) {
 //
 // The returned list does not identify the associated interface; use
 // Interfaces and Interface.Addrs for more detail.
-func InterfaceAddrs() ([]net.Addr, error) {
+func systemInterfaceAddrs() ([]net.Addr, error) {
 	return net.InterfaceAddrs()
 }
 
 // InterfaceAddrsByInterface returns a list of the system's unicast
 // interface addresses by specific interface.
-func InterfaceAddrsByInterface(ifi *net.Interface) ([]net.Addr, error) {
+func systemInterfaceAddrsByInterface(ifi *net.Interface) ([]net.Addr, error) {
 	return ifi.Addrs()
 }
 

@@ -20,3 +20,5 @@
 
 - 取消了`NetlinkRIB()`函数中对`Netlink`套接字的`Bind()`操作。
 - 根据`RTM_GETADDR`返回的Index号，使用`ioctl`获取其网卡的名称、MTU和标志位。
+当前模块为 `github.com/jannson/anet`，开发分支为 `dev`。
+已支持可注册网卡 Provider 和 gomobile/Android 原生回调，注册、生命周期、JSON合同及上游取舍见 [PROVIDER.md](PROVIDER.md)。

@@ -1,3 +1,10 @@
+# jannson/anet dev
+
+The module path is `github.com/jannson/anet`. See [Interface providers](PROVIDER.md)
+for registration, Android native callbacks, query ownership, error behavior and
+the selective upstream integration decision. The original workaround background
+and examples follow below.
+
 ## Introduction
 In response to the modifications made to the permissions for accessing system MAC addresses in Android 11, ordinary applications encounter several main issues when using NETLINK sockets:
 
